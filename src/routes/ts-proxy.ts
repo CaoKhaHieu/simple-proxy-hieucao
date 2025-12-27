@@ -14,17 +14,17 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'TS proxying is disabled'
     }));
   }
-  
+
   const url = getQuery(event).url as string;
   const headersParam = getQuery(event).headers as string;
-  
+
   if (!url) {
     return sendError(event, createError({
       statusCode: 400,
       statusMessage: 'URL parameter is required'
     }));
   }
-  
+
   let headers = {};
   try {
     headers = headersParam ? JSON.parse(headersParam) : {};
@@ -34,12 +34,12 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Invalid headers format'
     }));
   }
-  
+
   try {
     // Only check cache if caching is enabled
     if (!isCacheDisabled()) {
       const cachedSegment = getCachedSegment(url);
-      
+
       if (cachedSegment) {
         setResponseHeaders(event, {
           'Content-Type': cachedSegment.headers['content-type'] || 'video/mp2t',
@@ -48,11 +48,11 @@ export default defineEventHandler(async (event) => {
           'Access-Control-Allow-Methods': '*',
           'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
         });
-        
+
         return cachedSegment.data;
       }
     }
-    
+
     const response = await globalThis.fetch(url, {
       method: 'GET',
       headers: {
@@ -61,11 +61,11 @@ export default defineEventHandler(async (event) => {
         ...(headers as HeadersInit),
       }
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch TS file: ${response.status} ${response.statusText}`);
     }
-    
+
     setResponseHeaders(event, {
       'Content-Type': 'video/mp2t',
       'Access-Control-Allow-Origin': '*',
@@ -73,9 +73,13 @@ export default defineEventHandler(async (event) => {
       'Access-Control-Allow-Methods': '*',
       'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
     });
-    
+
     // Return the binary data directly
-    return new Uint8Array(await response.arrayBuffer());
+    // return new Uint8Array(await response.arrayBuffer());
+
+    // Use streaming to send data directly to the client
+    // This fixes the "video stops" issue by sending data as it arrives
+    return sendStream(event, response.body!);
   } catch (error: any) {
     console.error('Error proxying TS file:', error);
     return sendError(event, createError({
