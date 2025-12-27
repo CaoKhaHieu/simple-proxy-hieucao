@@ -2,6 +2,7 @@
   "name": "simple-proxy-hieucao",
   "private": true,
   "version": "2.2.4",
+  "packageManager": "pnpm@10.26.0",
   "scripts": {
     "prepare": "nitropack prepare",
     "dev": "nitropack dev",
