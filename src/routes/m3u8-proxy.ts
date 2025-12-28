@@ -214,7 +214,8 @@ async function proxyM3U8(event: any) {
 
     // Get the base URL for the host
     const host = getRequestHost(event);
-    const proto = getRequestProtocol(event);
+    // Use X-Forwarded-Proto if available (from Nginx/Cloudflare), otherwise fallback to detected protocol
+    const proto = (event.node.req.headers['x-forwarded-proto'] as string) || getRequestProtocol(event);
     const baseProxyUrl = `${proto}://${host}`;
 
     if (m3u8Content.includes("RESOLUTION=")) {
@@ -361,8 +362,18 @@ export function handleCacheStats(event: any) {
 }
 
 export default defineEventHandler(async (event) => {
-  // Handle CORS preflight requests
-  if (isPreflightRequest(event)) return handleCors(event, {});
+  // Handle CORS preflight requests explicitly
+  if (event.node.req.method === 'OPTIONS') {
+    setResponseHeaders(event, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+    });
+    event.node.res.statusCode = 204;
+    event.node.res.end();
+    return;
+  }
 
   if (process.env.DISABLE_M3U8 === 'true') {
     return sendError(event, createError({

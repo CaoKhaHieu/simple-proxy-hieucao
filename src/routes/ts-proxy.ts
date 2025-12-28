@@ -5,8 +5,18 @@ import { getCachedSegment } from './m3u8-proxy';
 const isCacheDisabled = () => process.env.ENABLE_CACHE !== 'true';
 
 export default defineEventHandler(async (event) => {
-  // Handle CORS preflight requests
-  if (isPreflightRequest(event)) return handleCors(event, {});
+  // Handle CORS preflight requests explicitly
+  if (event.node.req.method === 'OPTIONS') {
+    setResponseHeaders(event, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+    });
+    event.node.res.statusCode = 204;
+    event.node.res.end();
+    return;
+  }
 
   if (process.env.DISABLE_M3U8 === 'true') {
     return sendError(event, createError({
