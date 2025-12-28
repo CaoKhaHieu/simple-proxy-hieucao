@@ -214,8 +214,15 @@ async function proxyM3U8(event: any) {
 
     // Get the base URL for the host
     const host = getRequestHost(event);
-    // Use X-Forwarded-Proto if available (from Nginx/Cloudflare), otherwise fallback to detected protocol
-    const proto = (event.node.req.headers['x-forwarded-proto'] as string) || getRequestProtocol(event);
+    
+    // Best Practice for HTTPS detection behind Cloudflare/Nginx
+    let proto = getHeader(event, 'x-forwarded-proto') || getRequestProtocol(event);
+    
+    // If the host is your production domain, we can safely assume it should be https
+    if (host.includes('kolarea.com')) {
+      proto = 'https';
+    }
+    
     const baseProxyUrl = `${proto}://${host}`;
 
     if (m3u8Content.includes("RESOLUTION=")) {
@@ -267,7 +274,8 @@ async function proxyM3U8(event: any) {
         'Content-Type': 'application/vnd.apple.mpegurl',
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': '*',
-        'Access-Control-Allow-Methods': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Expose-Headers': '*',
         'Cache-Control': 'no-cache, no-store, must-revalidate'
       });
 

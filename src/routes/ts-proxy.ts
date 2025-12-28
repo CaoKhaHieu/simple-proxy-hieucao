@@ -80,7 +80,8 @@ export default defineEventHandler(async (event) => {
       'Content-Type': 'video/mp2t',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Headers': '*',
-      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Expose-Headers': '*',
       'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
     });
 
