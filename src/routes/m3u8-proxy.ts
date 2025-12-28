@@ -269,10 +269,16 @@ async function proxyM3U8(event: any) {
         }
       }
 
+      // Dynamic CORS handling
+      const allowedDomains = process.env.ALLOWED_DOMAINS?.split(',').map(d => d.trim()) || [];
+      const origin = getHeader(event, 'origin') || '';
+      const isAllowed = allowedDomains.includes('*') || allowedDomains.some(domain => origin.includes(domain));
+      const corsOrigin = isAllowed ? origin : (allowedDomains[0] || '*');
+
       // Set appropriate headers
       setResponseHeaders(event, {
         'Content-Type': 'application/vnd.apple.mpegurl',
-        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Origin': corsOrigin,
         'Access-Control-Allow-Headers': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Expose-Headers': '*',
@@ -372,11 +378,17 @@ export function handleCacheStats(event: any) {
 export default defineEventHandler(async (event) => {
   // Handle CORS preflight requests explicitly
   if (event.node.req.method === 'OPTIONS') {
+    const allowedDomains = process.env.ALLOWED_DOMAINS?.split(',').map(d => d.trim()) || [];
+    const origin = getHeader(event, 'origin') || '';
+    const isAllowed = allowedDomains.includes('*') || allowedDomains.some(domain => origin.includes(domain));
+    const corsOrigin = isAllowed ? origin : (allowedDomains[0] || '*');
+
     setResponseHeaders(event, {
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': corsOrigin,
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': '*',
       'Access-Control-Max-Age': '86400',
+      'Access-Control-Expose-Headers': '*',
     });
     event.node.res.statusCode = 204;
     event.node.res.end();

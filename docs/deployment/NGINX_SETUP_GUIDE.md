@@ -33,28 +33,41 @@ server {
     client_max_body_size 100M;
 
     location / {
+        # Xử lý yêu cầu Preflight (OPTIONS) - Chỉ cho phép domain của bạn
+        if ($request_method = 'OPTIONS') {
+            add_header 'Access-Control-Allow-Origin' 'https://film-learning-c126.vercel.app' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' '*' always;
+            add_header 'Access-Control-Max-Age' 1728000 always;
+            add_header 'Content-Type' 'text/plain; charset=utf-8' always;
+            add_header 'Content-Length' 0 always;
+            return 204;
+        }
+
         # Trỏ về ứng dụng Node.js đang chạy ở cổng 3000
         proxy_pass http://127.0.0.1:3000;
         
+        # Ép thêm header CORS bảo vệ (Anti-Leech)
+        add_header 'Access-Control-Allow-Origin' 'https://film-learning-c126.vercel.app' always;
+        add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always;
+        add_header 'Access-Control-Allow-Headers' '*' always;
+        add_header 'Access-Control-Expose-Headers' '*' always;
+
         # Các header quan trọng để truyền thông tin người dùng
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
 
         # Tối ưu hóa cho việc truyền tải Video (HLS)
-        proxy_buffering off;           # Tắt buffering để dữ liệu chảy ngay lập tức (Streaming)
+        proxy_buffering off;
         proxy_request_buffering off;
-        proxy_read_timeout 300s;      # Tăng timeout cho các file video lớn
+        proxy_read_timeout 300s;
         proxy_connect_timeout 300s;
         proxy_send_timeout 300s;
-        
-        # Hỗ trợ CORS (Nếu cần thiết, mặc dù app đã có)
-        add_header 'Access-Control-Allow-Origin' '*' always;
     }
 
     # Trang lỗi tùy chỉnh (Tùy chọn)
