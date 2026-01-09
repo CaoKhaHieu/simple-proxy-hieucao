@@ -32,6 +32,7 @@ Hệ thống là sự kết hợp hoàn hảo giữa 3 tầng công nghệ:
 2.  [**02. Thiết lập Nginx (Nginx Setup)**](./02_NGINX_SETUP_GUIDE.md): Cách cấu hình Nginx làm Reverse Proxy chuyên nghiệp.
 3.  [**03. Cài đặt SSL (SSL Setup)**](./03_SSL_SETUP_GUIDE.md): Hướng dẫn sử dụng Certbot để có HTTPS "xịn" cho VPS.
 4.  [**04. Tối ưu Cloudflare (Cloudflare Cache)**](./04_CLOUDFLARE_CACHE_GUIDE.md): Bí kíp cấu hình Cache Rules để gánh 95% băng thông.
+5.  [**05. Bảo mật Cloudflare (CORS & Anti-Leech)**](./05_CLOUDFLARE_CORS_ANTI_LEECH.md): Chặn xài chùa và cấu hình CORS tại Edge.
 
 ---
 
