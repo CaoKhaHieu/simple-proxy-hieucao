@@ -5,6 +5,25 @@ import { getCachedSegment } from './m3u8-proxy';
 const isCacheDisabled = () => process.env.ENABLE_CACHE !== 'true';
 
 export default defineEventHandler(async (event) => {
+  // Handle CORS preflight requests explicitly
+  if (event.node.req.method === 'OPTIONS') {
+    const allowedDomains = process.env.ALLOWED_DOMAINS?.split(',').map(d => d.trim()) || [];
+    const origin = getHeader(event, 'origin') || '';
+    const isAllowed = allowedDomains.includes('*') || allowedDomains.some(domain => origin.includes(domain));
+    const corsOrigin = isAllowed ? origin : (allowedDomains[0] || '*');
+
+    setResponseHeaders(event, {
+      'Access-Control-Allow-Origin': corsOrigin,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+      'Access-Control-Expose-Headers': '*',
+    });
+    event.node.res.statusCode = 204;
+    event.node.res.end();
+    return;
+  }
+
   if (process.env.DISABLE_M3U8 === 'true') {
     return sendError(event, createError({
       statusCode: 404,
@@ -40,6 +59,9 @@ export default defineEventHandler(async (event) => {
       if (cachedSegment) {
         setResponseHeaders(event, {
           'Content-Type': cachedSegment.headers['content-type'] || 'video/mp2t',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': '*',
+          'Access-Control-Allow-Methods': '*',
           'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
         });
 
@@ -60,8 +82,18 @@ export default defineEventHandler(async (event) => {
       throw new Error(`Failed to fetch TS file: ${response.status} ${response.statusText}`);
     }
 
+    // Dynamic CORS handling
+    const allowedDomains = process.env.ALLOWED_DOMAINS?.split(',').map(d => d.trim()) || [];
+    const origin = getHeader(event, 'origin') || '';
+    const isAllowed = allowedDomains.includes('*') || allowedDomains.some(domain => origin.includes(domain));
+    const corsOrigin = isAllowed ? origin : (allowedDomains[0] || '*');
+
     setResponseHeaders(event, {
       'Content-Type': 'video/mp2t',
+      'Access-Control-Allow-Origin': corsOrigin,
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Expose-Headers': '*',
       'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
     });
 

@@ -11,6 +11,23 @@ import {
 } from '@/utils/turnstile';
 
 export default defineEventHandler(async (event) => {
+  // Handle preflight CORS requests
+  if (isPreflightRequest(event)) {
+    handleCors(event, {});
+    // Ensure the response ends here for preflight
+    event.node.res.statusCode = 204;
+    event.node.res.end();
+    return;
+  }
+
+  // Reject any other OPTIONS requests
+  if (event.node.req.method === 'OPTIONS') {
+    throw createError({
+      statusCode: 405,
+      statusMessage: 'Method Not Allowed',
+    });
+  }
+
   // Parse destination URL
   const destination = getQuery<{ destination?: string }>(event).destination;
   if (!destination) {
@@ -47,7 +64,7 @@ export default defineEventHandler(async (event) => {
       fetchOptions: {
         redirect: 'follow',
         headers: getProxyHeaders(event.headers),
-        body: body as any,
+        body,
       },
       onResponse(outputEvent, response) {
         const headers = getAfterResponseHeaders(response.headers, response.url);
