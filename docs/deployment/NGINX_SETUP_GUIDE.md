@@ -22,12 +22,12 @@ sudo apt install nginx -y
     sudo nano /etc/nginx/sites-available/hls-proxy
     ```
 
-2.  **Dán nội dung cấu hình sau vào (Thay đổi `hls.kolarea.com` bằng domain của bạn):**
+2.  **Dán nội dung cấu hình sau vào (Thay đổi `hls.filmlearning.com` bằng domain của bạn):**
 
 ```nginx
 server {
     listen 80;
-    server_name hls.kolarea.com;
+    server_name hls.filmlearning.com;
 
     # Tăng kích thước upload nếu cần (không quan trọng với proxy này)
     client_max_body_size 100M;
@@ -123,8 +123,8 @@ pm2 restart hls-proxy
 ## Bước 5: Kiểm tra kết quả
 
 Bây giờ bạn có thể truy cập:
-*   `http://hls.kolarea.com/` (Nginx sẽ tự động chuyển tiếp vào App ở cổng 3000).
-*   Nếu bạn đã bật Cloudflare HTTPS, hãy dùng: `https://hls.kolarea.com/`.
+*   `http://hls.filmlearning.com/` (Nginx sẽ tự động chuyển tiếp vào App ở cổng 3000).
+*   Nếu bạn đã bật Cloudflare HTTPS, hãy dùng: `https://hls.filmlearning.com/`.
 
 ---
 

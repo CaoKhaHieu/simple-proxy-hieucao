@@ -65,7 +65,7 @@ sudo pm2 save
 Để gánh được 1000 user trên VPS cổng mạng 200Mbps, bạn **bắt buộc** phải cấu hình Cloudflare để cache video.
 
 ### 1. DNS Setup
-*   Trỏ tên miền của bạn (ví dụ: `hls.kolarea.com`) về IP của VPS.
+*   Trỏ tên miền của bạn (ví dụ: `hls.filmlearning.com`) về IP của VPS.
 *   Đảm bảo biểu tượng đám mây là **Màu cam (Proxied)**.
 *   Vào mục **SSL/TLS** -> **Edge Certificates**, bật **Always Use HTTPS**.
 
@@ -73,7 +73,7 @@ sudo pm2 save
 Mặc định Cloudflare không lưu file video. Bạn cần ép nó lưu lại:
 1.  Vào Dashboard Cloudflare -> **Caching** -> **Cache Rules**.
 2.  Nhấn **Create rule**.
-3.  **Field:** `Hostname` | **Operator:** `equals` | **Value:** `hls.kolarea.com`
+3.  **Field:** `Hostname` | **Operator:** `equals` | **Value:** `hls.filmlearning.com`
 4.  *(Nhấn "And" để thêm điều kiện)*
 5.  **Field:** `URI Path` | **Operator:** `contains` | **Value:** `/ts-proxy`
 6.  **Cache eligibility:** Chọn `Eligible for cache`.
@@ -107,10 +107,10 @@ setResponseHeaders(event, {
 Sau khi hoàn tất, URL của bạn sẽ rất gọn (không cần :3000):
 
 **Link Playlist:**
-`https://hls.kolarea.com/m3u8-proxy?url=[LINK_M3U8_GOC]&headers=[JSON_HEADERS]`
+`https://hls.filmlearning.com/m3u8-proxy?url=[LINK_M3U8_GOC]&headers=[JSON_HEADERS]`
 
 **Link Segment (Tự động sinh ra bên trong playlist):**
-`https://hls.kolarea.com/ts-proxy?url=[LINK_TS_GOC]`
+`https://hls.filmlearning.com/ts-proxy?url=[LINK_TS_GOC]`
 
 ---
 

@@ -11,7 +11,7 @@ Trước khi cấu hình Cache, Cloudflare phải nắm quyền quản lý DNS c
 1.  **Đổi Nameservers:** Đăng nhập vào quản trị tên miền (Vietnix/Mắt Bão...) và đổi Nameservers thành:
     *   `arushi.ns.cloudflare.com`
     *   `thomas.ns.cloudflare.com`
-2.  **Kiểm tra DNS:** Đảm bảo các bản ghi cũ của website chính (`kolarea.com`) đã được copy sang Cloudflare để không làm sập web hiện tại.
+2.  **Kiểm tra DNS:** Đảm bảo các bản ghi cũ của website chính (`filmlearning.com`) đã được copy sang Cloudflare để không làm sập web hiện tại.
 3.  **Thêm Subdomain Proxy:**
     *   **Type:** `A` | **Name:** `hls` | **Content:** `163.227.230.130` (IP VPS)
     *   **Proxy status:** Phải là **Màu cam (Proxied)**.
@@ -20,7 +20,7 @@ Trước khi cấu hình Cache, Cloudflare phải nắm quyền quản lý DNS c
 
 ## Bước 2: Cấu hình SSL/TLS (Để có HTTPS)
 
-Để link video có dạng `https://hls.kolarea.com/...` mượt mà:
+Để link video có dạng `https://hls.filmlearning.com/...` mượt mà:
 
 1.  Vào mục **SSL/TLS** -> **Overview**:
     *   Chọn chế độ **Flexible** (Nếu VPS chưa cài SSL).
@@ -37,7 +37,7 @@ Mặc định Cloudflare không cache file video `.ts`. Bạn phải ép nó lư
 1.  Vào **Caching** -> **Cache Rules** -> nhấn **Create rule**.
 2.  **Rule name:** `Cache HLS Segments`
 3.  **If incoming requests match... (Điều kiện):**
-    *   Field: `Hostname` | Operator: `equals` | Value: `hls.kolarea.com`
+    *   Field: `Hostname` | Operator: `equals` | Value: `hls.filmlearning.com`
     *   *(Nhấn "And")*
     *   Field: `URI Path` | Operator: `contains` | Value: `/ts-proxy`
 4.  **Then... (Hành động):**

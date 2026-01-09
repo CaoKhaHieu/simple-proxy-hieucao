@@ -219,7 +219,7 @@ async function proxyM3U8(event: any) {
     let proto = getHeader(event, 'x-forwarded-proto') || getRequestProtocol(event);
     
     // If the host is your production domain, we can safely assume it should be https
-    if (host.includes('kolarea.com')) {
+    if (host.includes('filmlearning.com')) {
       proto = 'https';
     }
     
