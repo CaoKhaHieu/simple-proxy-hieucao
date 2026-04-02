@@ -69,13 +69,17 @@ export default defineEventHandler(async (event) => {
       }
     }
 
+    const filteredHeaders = Object.fromEntries(
+      Object.entries(headers as Record<string, any>).filter(([_, v]) => v !== "" && v !== null)
+    );
+
+    const fetchHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
+      ...filteredHeaders,
+    };
     const response = await globalThis.fetch(url, {
       method: 'GET',
-      headers: {
-        // Default User-Agent (from src/utils/headers.ts)
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
-        ...(headers as HeadersInit),
-      }
+      headers: fetchHeaders,
     });
 
     if (!response.ok) {
