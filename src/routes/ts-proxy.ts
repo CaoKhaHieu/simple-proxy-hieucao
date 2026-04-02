@@ -5,8 +5,24 @@ import { getCachedSegment } from './m3u8-proxy';
 const isCacheDisabled = () => process.env.ENABLE_CACHE !== 'true';
 
 export default defineEventHandler(async (event) => {
-  // Handle CORS preflight requests
-  if (isPreflightRequest(event)) return handleCors(event, {});
+  // Handle CORS preflight requests explicitly
+  if (event.node.req.method === 'OPTIONS') {
+    const allowedDomains = process.env.ALLOWED_DOMAINS?.split(',').map(d => d.trim()) || [];
+    const origin = getHeader(event, 'origin') || '';
+    const isAllowed = allowedDomains.includes('*') || allowedDomains.some(domain => origin.includes(domain));
+    const corsOrigin = isAllowed ? origin : (allowedDomains[0] || '*');
+
+    setResponseHeaders(event, {
+      'Access-Control-Allow-Origin': corsOrigin,
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': '*',
+      'Access-Control-Max-Age': '86400',
+      'Access-Control-Expose-Headers': '*',
+    });
+    event.node.res.statusCode = 204;
+    event.node.res.end();
+    return;
+  }
 
   if (process.env.DISABLE_M3U8 === 'true') {
     return sendError(event, createError({
@@ -14,17 +30,17 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'TS proxying is disabled'
     }));
   }
-  
+
   const url = getQuery(event).url as string;
   const headersParam = getQuery(event).headers as string;
-  
+
   if (!url) {
     return sendError(event, createError({
       statusCode: 400,
       statusMessage: 'URL parameter is required'
     }));
   }
-  
+
   let headers = {};
   try {
     headers = headersParam ? JSON.parse(headersParam) : {};
@@ -34,12 +50,12 @@ export default defineEventHandler(async (event) => {
       statusMessage: 'Invalid headers format'
     }));
   }
-  
+
   try {
     // Only check cache if caching is enabled
     if (!isCacheDisabled()) {
       const cachedSegment = getCachedSegment(url);
-      
+
       if (cachedSegment) {
         setResponseHeaders(event, {
           'Content-Type': cachedSegment.headers['content-type'] || 'video/mp2t',
@@ -48,34 +64,49 @@ export default defineEventHandler(async (event) => {
           'Access-Control-Allow-Methods': '*',
           'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
         });
-        
+
         return cachedSegment.data;
       }
     }
-    
+
+    const filteredHeaders = Object.fromEntries(
+      Object.entries(headers as Record<string, any>).filter(([_, v]) => v !== "" && v !== null)
+    );
+
+    const fetchHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
+      ...filteredHeaders,
+    };
     const response = await globalThis.fetch(url, {
       method: 'GET',
-      headers: {
-        // Default User-Agent (from src/utils/headers.ts)
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0',
-        ...(headers as HeadersInit),
-      }
+      headers: fetchHeaders,
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to fetch TS file: ${response.status} ${response.statusText}`);
     }
-    
+
+    // Dynamic CORS handling
+    const allowedDomains = process.env.ALLOWED_DOMAINS?.split(',').map(d => d.trim()) || [];
+    const origin = getHeader(event, 'origin') || '';
+    const isAllowed = allowedDomains.includes('*') || allowedDomains.some(domain => origin.includes(domain));
+    const corsOrigin = isAllowed ? origin : (allowedDomains[0] || '*');
+
     setResponseHeaders(event, {
       'Content-Type': 'video/mp2t',
-      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Origin': corsOrigin,
       'Access-Control-Allow-Headers': '*',
-      'Access-Control-Allow-Methods': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Expose-Headers': '*',
       'Cache-Control': 'public, max-age=3600' // Allow caching of TS segments
     });
-    
+
     // Return the binary data directly
-    return new Uint8Array(await response.arrayBuffer());
+    // return new Uint8Array(await response.arrayBuffer());
+
+    // Use streaming to send data directly to the client
+    // This fixes the "video stops" issue by sending data as it arrives
+    return sendStream(event, response.body!);
   } catch (error: any) {
     console.error('Error proxying TS file:', error);
     return sendError(event, createError({
